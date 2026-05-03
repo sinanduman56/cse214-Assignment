@@ -10,6 +10,10 @@ env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ${{ github.repository_owner }}/shopplatform
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   # ──────────────────────────────────────────
   # 1. Backend: Test + Build + Docker Push
