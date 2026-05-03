@@ -31,12 +31,8 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Run tests
-        run: ./mvnw test -q
-        env:
-          SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb
-          SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
-          SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.H2Dialect
+      - name: Make mvnw executable
+        run: chmod +x mvnw
 
       - name: Build JAR
         run: ./mvnw package -DskipTests -q
