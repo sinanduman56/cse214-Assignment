@@ -1,0 +1,170 @@
+<div class="dashboard">
+
+  <!-- CTA Banner -->
+  <div class="cta-banner">
+    <div>
+      <div class="cta-title">🛍️ Yeni Ürünler Sizi Bekliyor!</div>
+      <div class="cta-sub">60'tan fazla ürün arasından dilediğinizi seçin, hemen sipariş verin.</div>
+    </div>
+    <a routerLink="/customer/products" class="cta-btn">
+      <mat-icon style="font-size:1rem;width:1rem;height:1rem">store</mat-icon>
+      Alışverişe Başla
+    </a>
+  </div>
+
+  <!-- KPI Cards -->
+  @if (loading()) {
+    <div style="text-align:center;padding:60px"><mat-spinner diameter="50"></mat-spinner></div>
+  } @else {
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(99,102,241,0.1)">
+          <mat-icon style="color:#6366f1">receipt_long</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-label">Toplam Sipariş</div>
+          <div class="kpi-value">{{ totalOrders }}</div>
+          <span class="kpi-trend neutral">Tüm zamanlar</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(34,197,94,0.1)">
+          <mat-icon style="color:#22c55e">payments</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-label">Toplam Harcama</div>
+          <div class="kpi-value" style="font-size:1.35rem">{{ totalSpent | number:'1.0-0' }} ₺</div>
+          <span class="kpi-trend up">↑ Aktif alışveriş</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(251,146,60,0.1)">
+          <mat-icon style="color:#fb923c">star</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-label">Yazdığım Yorum</div>
+          <div class="kpi-value">{{ totalReviews }}</div>
+          <span class="kpi-trend neutral">Değerlendirme</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background:rgba(56,189,248,0.1)">
+          <mat-icon style="color:#38bdf8">local_shipping</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-label">Aktif Sipariş</div>
+          <div class="kpi-value">{{ activeOrders }}</div>
+          <span class="kpi-trend up">Kargoda / Onaylandı</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+      <!-- Spending Chart -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Aylık Harcama Geçmişi</div>
+            <div class="card-sub">Son 7 ay</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrap">
+            <canvas #spendingChart></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Status Summary -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Sipariş Durumu</div>
+            <div class="card-sub">Özet</div>
+          </div>
+        </div>
+        <div class="quick-list">
+          <div class="quick-item">
+            <div class="quick-dot" style="background:#f59e0b"></div>
+            <div class="quick-label">Bekliyor</div>
+            <div class="quick-val">{{ countByStatus('PENDING') }}</div>
+          </div>
+          <div class="quick-item">
+            <div class="quick-dot" style="background:#3b82f6"></div>
+            <div class="quick-label">Onaylandı</div>
+            <div class="quick-val">{{ countByStatus('CONFIRMED') }}</div>
+          </div>
+          <div class="quick-item">
+            <div class="quick-dot" style="background:#0ea5e9"></div>
+            <div class="quick-label">Kargoda</div>
+            <div class="quick-val">{{ countByStatus('SHIPPED') }}</div>
+          </div>
+          <div class="quick-item">
+            <div class="quick-dot" style="background:#22c55e"></div>
+            <div class="quick-label">Teslim Edildi</div>
+            <div class="quick-val">{{ countByStatus('DELIVERED') }}</div>
+          </div>
+          <div class="quick-item">
+            <div class="quick-dot" style="background:#ef4444"></div>
+            <div class="quick-label">İptal</div>
+            <div class="quick-val">{{ countByStatus('CANCELLED') }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="card orders-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Son Siparişler</div>
+          <div class="card-sub">En son 5 sipariş</div>
+        </div>
+        <a routerLink="/customer/orders" style="font-size:0.8rem;color:#6366f1;font-weight:600;text-decoration:none">
+          Tümünü Gör →
+        </a>
+      </div>
+      <div class="card-body" style="padding-top:8px">
+        @if (recentOrders().length === 0) {
+          <div class="empty">
+            <mat-icon>receipt_long</mat-icon>
+            <p>Henüz sipariş vermediniz.</p>
+            <a routerLink="/customer/products" style="color:#6366f1;font-weight:600">Alışverişe Başla</a>
+          </div>
+        } @else {
+          <table class="orders-table">
+            <thead>
+              <tr>
+                <th>Sipariş #</th>
+                <th>Tarih</th>
+                <th>Tutar</th>
+                <th>Durum</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (order of recentOrders(); track order.id) {
+                <tr>
+                  <td><span class="order-id">#{{ order.id }}</span></td>
+                  <td>{{ order.orderDate | date:'dd.MM.yyyy' }}</td>
+                  <td><span class="order-amount">{{ order.grandTotal | number:'1.2-2' }} ₺</span></td>
+                  <td><span class="badge {{ statusClass(order.status) }}">{{ statusLabel(order.status) }}</span></td>
+                  <td>
+                    <a [routerLink]="['/customer/orders', order.id]"
+                       style="color:#6366f1;font-size:0.8rem;font-weight:600;text-decoration:none">
+                      Detay →
+                    </a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,182 @@
+<div class="pd-page">
+  <!-- Back -->
+  <a class="back-link" routerLink="/customer/products">
+    <mat-icon>arrow_back_ios</mat-icon> Ürünlere Dön
+  </a>
+
+  @if (loading()) {
+    <div class="spinner-wrap"><mat-spinner diameter="52"></mat-spinner></div>
+  } @else if (product()) {
+    <!-- ── Product Hero ── -->
+    <div class="hero">
+      <div class="hero-img-wrap">
+        <img [src]="getImageUrl()" [alt]="product()!.name" class="hero-img" />
+        <button class="wish-btn" (click)="wishlist.toggle(product()!)"
+                [class.active]="wishlist.has(product()!.id)" title="Favorilere ekle">
+          <mat-icon>{{ wishlist.has(product()!.id) ? 'favorite' : 'favorite_border' }}</mat-icon>
+        </button>
+      </div>
+
+      <div class="hero-info">
+        @if (product()!.category) {
+          <span class="cat-badge">{{ product()!.category!.name }}</span>
+        }
+        <h1 class="product-title">{{ product()!.name }}</h1>
+        <div class="sku">SKU: {{ product()!.sku }}</div>
+
+        <!-- Rating summary -->
+        <div class="rating-row">
+          <div class="stars-display">
+            @for (s of renderStars(avgRating()); track $index) {
+              <mat-icon class="star-icon" [class.full]="s.type === 'full'" [class.half]="s.type === 'half'" [class.empty]="s.type === 'empty'">
+                {{ s.type === 'full' ? 'star' : s.type === 'half' ? 'star_half' : 'star_border' }}
+              </mat-icon>
+            }
+          </div>
+          <span class="avg-num">{{ avgRating() | number:'1.1-1' }}</span>
+          <span class="review-cnt">({{ reviewCount() }} yorum)</span>
+        </div>
+
+        <div class="price">{{ product()!.unitPrice | currency:'TRY':'symbol':'1.2-2':'tr' }}</div>
+
+        <!-- Qty + Cart -->
+        <div class="add-row">
+          <div class="qty-ctrl">
+            <button class="qty-btn" (click)="decrementQty()"><mat-icon>remove</mat-icon></button>
+            <span class="qty-val">{{ quantity() }}</span>
+            <button class="qty-btn" (click)="incrementQty()"><mat-icon>add</mat-icon></button>
+          </div>
+          <button class="cart-btn" (click)="addToCart()">
+            <mat-icon>add_shopping_cart</mat-icon> Sepete Ekle
+          </button>
+        </div>
+
+        @if ((product()!.stockQuantity ?? 99) < 10) {
+          <div style="display:flex;align-items:center;gap:8px;background:#fff5f5;border:1px solid #fca5a5;border-radius:10px;padding:10px 14px;margin-top:14px">
+            <span style="font-size:1.2rem">🔥</span>
+            <div>
+              <span style="color:#dc2626;font-weight:700;font-size:0.95rem">Son {{ product()!.stockQuantity }} ürün kaldı!</span>
+              <span style="color:#ef4444;font-size:0.82rem;margin-left:6px">Hızlı ol, stok tükeniyor.</span>
+            </div>
+          </div>
+        }
+
+        @if (product()!.description) {
+          <p class="desc">{{ product()!.description }}</p>
+        }
+      </div>
+    </div>
+
+    <!-- ── Reviews Section ── -->
+    <section class="reviews-section">
+      <h2 class="section-title">Müşteri Yorumları</h2>
+
+      <!-- Stats panel -->
+      @if (reviewCount() > 0) {
+        <div class="stats-panel">
+          <div class="stats-big">
+            <div class="big-num">{{ avgRating() | number:'1.1-1' }}</div>
+            <div class="big-stars">
+              @for (s of renderStars(avgRating()); track $index) {
+                <mat-icon class="star-icon full" style="font-size:1.4rem;width:1.4rem;height:1.4rem;">
+                  {{ s.type === 'full' ? 'star' : s.type === 'half' ? 'star_half' : 'star_border' }}
+                </mat-icon>
+              }
+            </div>
+            <div class="big-cnt">{{ reviewCount() }} değerlendirme</div>
+          </div>
+          <div class="dist-bars">
+            @for (star of stars5; track star) {
+              <div class="dist-row">
+                <span class="dist-label">{{ star }} <mat-icon style="font-size:0.8rem;width:0.8rem;height:0.8rem;vertical-align:middle;color:#f59e0b">star</mat-icon></span>
+                <div class="dist-track">
+                  <div class="dist-fill" [style.width.%]="distPct(star)"></div>
+                </div>
+                <span class="dist-pct">{{ distPct(star) }}%</span>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Write review form -->
+      @if (auth.isLoggedIn() && canReview()) {
+        <div class="review-form-card">
+          <div class="form-title">Yorum Yaz</div>
+          <div class="form-subtitle">Bu ürünü değerlendirin</div>
+
+          <!-- Interactive stars -->
+          <div class="star-picker" (mouseleave)="clearHover()">
+            @for (star of starsAsc; track star) {
+              <mat-icon class="pick-star"
+                        [class.active]="activeStar(star)"
+                        (mouseenter)="setHover(star)"
+                        (click)="setStar(star)">
+                {{ activeStar(star) ? 'star' : 'star_border' }}
+              </mat-icon>
+            }
+            @if (selectedStar() > 0) {
+              <span class="star-label">{{ ['', 'Çok Kötü', 'Kötü', 'Orta', 'İyi', 'Mükemmel'][selectedStar()] }}</span>
+            }
+          </div>
+
+          <textarea class="review-textarea"
+                    [value]="reviewText()"
+                    (input)="reviewText.set($any($event.target).value)"
+                    placeholder="Ürün hakkında düşüncelerinizi paylaşın..."
+                    rows="4"
+                    maxlength="1000"></textarea>
+          <div class="char-count">{{ reviewText().length }} / 1000</div>
+
+          <button class="submit-btn" (click)="submitReview()" [disabled]="submitting() || !selectedStar()">
+            @if (submitting()) { <mat-spinner diameter="18" style="display:inline-block"></mat-spinner> }
+            @else { <mat-icon>send</mat-icon> }
+            Gönder
+          </button>
+        </div>
+      } @else if (auth.isLoggedIn() && !canReview()) {
+        <div class="login-prompt">
+          <mat-icon>shopping_bag</mat-icon>
+          <span>Bu ürünü satın almış müşteriler yorum yapabilir</span>
+        </div>
+      } @else {
+        <div class="login-prompt">
+          <mat-icon>lock_outline</mat-icon>
+          <span>Yorum yazmak için <a routerLink="/auth/login">giriş yapın</a></span>
+        </div>
+      }
+
+      <!-- Review list -->
+      @if (reviews().length === 0) {
+        <div class="empty-reviews">
+          <mat-icon>rate_review</mat-icon>
+          <p>Henüz yorum yok. İlk yorumu siz yapın!</p>
+        </div>
+      } @else {
+        <div class="review-list">
+          @for (review of reviews(); track review.id) {
+            <div class="review-card">
+              <div class="review-head">
+                <div class="reviewer-avatar">{{ review.userEmail[0].toUpperCase() }}</div>
+                <div class="reviewer-info">
+                  <div class="reviewer-name">{{ review.userEmail }}</div>
+                  <div class="review-date">{{ timeAgo(review.createdAt) }}</div>
+                </div>
+                <div class="review-stars">
+                  @for (s of renderStars(review.starRating); track $index) {
+                    <mat-icon class="star-icon" [class.full]="s.type === 'full'" [class.empty]="s.type === 'empty'">
+                      {{ s.type === 'full' ? 'star' : 'star_border' }}
+                    </mat-icon>
+                  }
+                </div>
+              </div>
+              @if (review.content) {
+                <p class="review-body">{{ review.content }}</p>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+</div>

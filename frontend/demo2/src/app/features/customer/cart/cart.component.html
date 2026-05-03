@@ -1,0 +1,80 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Sepetim</h1>
+    @if (cart?.items?.length) {
+      <button mat-stroked-button color="warn" (click)="clearCart()">
+        <mat-icon>delete_sweep</mat-icon> Sepeti Temizle
+      </button>
+    }
+  </div>
+
+  @if (loading) {
+    <div style="text-align:center;padding:60px"><mat-spinner diameter="50"></mat-spinner></div>
+  } @else if (!cart?.items?.length) {
+    <div style="text-align:center;padding:60px;background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+      <mat-icon style="font-size:80px;color:#e0e0e0">shopping_cart</mat-icon>
+      <p style="font-size:1.2rem;color:#9e9e9e;margin-top:12px">Sepetiniz boş</p>
+      <a mat-flat-button color="primary" routerLink="/customer/products" style="margin-top:16px">Alışverişe Başla</a>
+    </div>
+  } @else {
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:20px">
+      <!-- Items -->
+      <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+        @for (item of cart!.items; track item.id) {
+          <div class="cart-item">
+            <img [src]="getImageUrl(item)" [alt]="item.product.name" />
+            <div class="item-info">
+              <div style="font-weight:600;color:#212121">{{ item.product.name }}</div>
+              <div style="font-size:0.8rem;color:#9e9e9e">SKU: {{ item.product.sku }}</div>
+              <div style="color:#1565c0;font-weight:600">{{ item.product.unitPrice | currency:'TRY':'symbol':'1.2-2':'tr' }}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;border:1px solid #e0e0e0;border-radius:8px;padding:2px 6px">
+              <button mat-icon-button (click)="updateQuantity(item, item.quantity - 1)" style="transform:scale(0.8)">
+                <mat-icon>remove</mat-icon>
+              </button>
+              <span style="font-weight:600;min-width:24px;text-align:center">{{ item.quantity }}</span>
+              <button mat-icon-button (click)="updateQuantity(item, item.quantity + 1)" style="transform:scale(0.8)">
+                <mat-icon>add</mat-icon>
+              </button>
+            </div>
+            <div class="item-total">{{ (item.product.unitPrice * item.quantity) | currency:'TRY':'symbol':'1.2-2':'tr' }}</div>
+            <button mat-icon-button color="warn" (click)="removeItem(item)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Summary -->
+      <div style="background:#fff;border-radius:12px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,0.06);height:fit-content">
+        <h3 style="font-size:1.1rem;font-weight:600;margin-bottom:16px">Sipariş Özeti</h3>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;color:#757575">
+          <span>Ürünler ({{ cart!.items.length }})</span>
+          <span>{{ total | number:'1.2-2' }} ₺</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;color:#757575">
+          <span>Kargo</span>
+          <span style="color:#2e7d32">Ücretsiz</span>
+        </div>
+        <mat-divider style="margin:12px 0"></mat-divider>
+        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.1rem;margin-bottom:20px">
+          <span>Toplam</span>
+          <span style="color:#6366f1">{{ total | number:'1.2-2' }} ₺</span>
+        </div>
+
+        <a routerLink="/customer/checkout"
+           style="display:flex;align-items:center;justify-content:center;gap:8px;
+                  width:100%;padding:14px;background:linear-gradient(135deg,#6366f1,#8b5cf6);
+                  color:#fff;border-radius:12px;font-weight:700;font-size:1rem;
+                  text-decoration:none;transition:opacity 0.18s;border:none;cursor:pointer">
+          <mat-icon style="font-size:1.1rem;width:1.1rem;height:1.1rem">lock</mat-icon>
+          Ödemeye Geç
+        </a>
+        <div style="display:flex;align-items:center;gap:5px;justify-content:center;margin-top:10px;font-size:0.72rem;color:#94a3b8">
+          <mat-icon style="font-size:0.85rem;width:0.85rem;height:0.85rem;color:#22c55e">verified_user</mat-icon>
+          256-bit SSL güvenli ödeme
+        </div>
+      </div>
+    </div>
+  }
+</div>

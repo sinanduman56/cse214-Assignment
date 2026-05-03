@@ -1,0 +1,95 @@
+<div class="page-container">
+  <a mat-button routerLink="/customer/orders" style="margin-bottom:16px;display:inline-flex;align-items:center">
+    <mat-icon>arrow_back</mat-icon> Siparişlere Dön
+  </a>
+
+  @if (loading) {
+    <div style="text-align:center;padding:60px"><mat-spinner diameter="50"></mat-spinner></div>
+  } @else if (order) {
+    <div style="display:grid;grid-template-columns:1fr 300px;gap:20px">
+      <div>
+        <div class="chart-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3 style="margin:0">Sipariş #{{ order.id }}</h3>
+            <span class="status-chip {{ statusClass(order.status) }}">{{ order.status }}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;color:#757575;font-size:0.9rem;margin-bottom:16px">
+            <div><strong>Sipariş Tarihi:</strong> {{ order.orderDate | date:'dd.MM.yyyy HH:mm' }}</div>
+            <div><strong>Ödeme Yöntemi:</strong> {{ order.paymentMethod }}</div>
+            <div><strong>Sevkiyat:</strong> {{ order.fulfilment ?? 'Beklemede' }}</div>
+          </div>
+
+          <mat-divider style="margin-bottom:16px"></mat-divider>
+          <h4 style="margin-bottom:12px">Ürünler</h4>
+          @for (item of order.orderItems; track item.id) {
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0f2f5">
+              <img [src]="item.product.imageUrl || 'https://placehold.co/60x60/eceff1/90a4ae?text=Ü'" style="width:60px;height:60px;object-fit:cover;border-radius:6px" />
+              <div style="flex:1">
+                <div style="font-weight:600">{{ item.product.name }}</div>
+                <div style="color:#9e9e9e;font-size:0.8rem">{{ item.quantity }} adet × {{ item.unitPrice | currency:'TRY':'symbol':'1.2-2':'tr' }}</div>
+              </div>
+              <div style="font-weight:700;color:#1565c0">{{ (item.unitPrice * item.quantity) | currency:'TRY':'symbol':'1.2-2':'tr' }}</div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="chart-card" style="height:fit-content">
+        <h3>Sipariş Özeti</h3>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;color:#757575">
+          <span>Ara Toplam</span><span>{{ subtotal | currency:'TRY':'symbol':'1.2-2':'tr' }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;color:#757575">
+          <span>Kargo</span><span style="color:#2e7d32">Ücretsiz</span>
+        </div>
+        <mat-divider style="margin:12px 0"></mat-divider>
+        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.1rem">
+          <span>Toplam</span>
+          <span style="color:#1565c0">{{ order.grandTotal | currency:'TRY':'symbol':'1.2-2':'tr' }}</span>
+        </div>
+
+        <!-- Kargo Takip -->
+        @if (order.shipment) {
+          <mat-divider style="margin:16px 0"></mat-divider>
+          <h4 style="margin:0 0 12px">Kargo Bilgisi</h4>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:0.9rem">
+            @if (order.shipment.warehouse) {
+              <div style="display:flex;justify-content:space-between">
+                <span style="color:#757575">Depo</span>
+                <span style="font-weight:500">{{ order.shipment.warehouse }}</span>
+              </div>
+            }
+            @if (order.shipment.shipmentMode) {
+              <div style="display:flex;justify-content:space-between">
+                <span style="color:#757575">Kargo Modu</span>
+                <span style="font-weight:500">{{ order.shipment.shipmentMode }}</span>
+              </div>
+            }
+            @if (order.shipment.productImportance) {
+              <div style="display:flex;justify-content:space-between">
+                <span style="color:#757575">Öncelik</span>
+                <span style="font-weight:500">{{ order.shipment.productImportance }}</span>
+              </div>
+            }
+            @if (order.shipment.discountOffered) {
+              <div style="display:flex;justify-content:space-between">
+                <span style="color:#757575">İndirim</span>
+                <span style="color:#2e7d32;font-weight:500">%{{ order.shipment.discountOffered }}</span>
+              </div>
+            }
+            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;background:#e8f5e9;padding:8px;border-radius:8px">
+              <mat-icon style="color:#2e7d32;font-size:18px;height:18px;width:18px">local_shipping</mat-icon>
+              <span style="color:#1b5e20;font-size:0.85rem">Sipariş kargoya verilmiştir</span>
+            </div>
+          </div>
+        } @else {
+          <mat-divider style="margin:16px 0"></mat-divider>
+          <div style="display:flex;align-items:center;gap:6px;background:#fff8e1;padding:10px;border-radius:8px">
+            <mat-icon style="color:#f9a825;font-size:18px;height:18px;width:18px">schedule</mat-icon>
+            <span style="color:#f57f17;font-size:0.85rem">Kargo henüz atanmadı</span>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,136 @@
+﻿<div class="dp-shell">
+
+  <!-- ── HEADER ── -->
+  <div class="dp-header">
+    <div class="dp-header-left">
+      <div class="dp-bot-badge">
+        <span class="dp-bot-dot"></span>
+        <mat-icon class="dp-bot-icon">psychology</mat-icon>
+      </div>
+      <div>
+        <div class="dp-bot-name">DataPulse AI <span class="dp-bot-emoji">🤖</span></div>
+        <div class="dp-bot-status"><span class="dp-status-dot"></span> Online · Analiz etmeye hazır</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MESSAGES ── -->
+  <div class="dp-messages">
+
+    @if (messages.length === 1) {
+      <div class="dp-chips-block">
+        <p class="dp-chips-label">Hızlı soru sor:</p>
+        <div class="dp-chips-row">
+          @if (isAdmin()) {
+            @for (q of adminQuestions; track q) {
+              <button class="dp-chip" (click)="send(q)">{{ q }}</button>
+            }
+          } @else if (isStoreOwner()) {
+            @for (q of storeOwnerQuestions; track q) {
+              <button class="dp-chip" (click)="send(q)">{{ q }}</button>
+            }
+          } @else {
+            @for (q of suggestedQuestions; track q) {
+              <button class="dp-chip" (click)="send(q)">{{ q }}</button>
+            }
+          }
+        </div>
+      </div>
+    }
+
+    @for (msg of messages; track $index) {
+
+      @if (msg.role === 'user') {
+        <div class="dp-row dp-row-user">
+          <div class="dp-bubble dp-bubble-user">{{ msg.content }}</div>
+          <div class="dp-av dp-av-user"><mat-icon>person</mat-icon></div>
+        </div>
+      }
+
+      @if (msg.role === 'assistant') {
+        <div class="dp-row dp-row-bot">
+          <div class="dp-av dp-av-bot"><mat-icon>psychology</mat-icon></div>
+          <div class="dp-bot-wrap">
+            @if (msg.guardrailInfo) {
+              <!-- Guardrail Kart -->
+              <div class="dp-guardrail-card">
+                <div class="dp-guardrail-header">
+                  <span class="dp-guardrail-badge">Guardrail Agent — KAPSAM DIŞI</span>
+                </div>
+                <div class="dp-guardrail-body">
+                  <div class="dp-guardrail-title">
+                    <mat-icon style="font-size:18px;color:#f59e0b;vertical-align:middle">warning</mat-icon>
+                    Kapsam Dışı Sorgu
+                  </div>
+                  <div class="dp-guardrail-row">
+                    <span class="dp-guardrail-label">Tespit türü</span>
+                    <span class="dp-guardrail-value-red">{{ msg.guardrailInfo.detection_type }}</span>
+                  </div>
+                  @if (msg.guardrailInfo.keyword) {
+                    <div class="dp-guardrail-row">
+                      <span class="dp-guardrail-label">Anahtar kelime</span>
+                      <span class="dp-guardrail-value-red">"{{ msg.guardrailInfo.keyword }}"</span>
+                    </div>
+                  }
+                  <div class="dp-guardrail-row">
+                    <span class="dp-guardrail-label">Eylem</span>
+                    <span class="dp-guardrail-value-red">{{ msg.guardrailInfo.action }}</span>
+                  </div>
+                </div>
+                <div class="dp-guardrail-alt">
+                  <div class="dp-guardrail-alt-title">Bunun yerine yapabilirim:</div>
+                  <p class="dp-guardrail-alt-text">{{ msg.guardrailInfo.alternative }}</p>
+                  <span class="dp-guardrail-chip">Kapsam dışı · Alternatif önerildi</span>
+                </div>
+              </div>
+            } @else {
+              <div class="dp-bubble dp-bubble-bot">{{ msg.content }}</div>
+            }
+            @if (msg.chartData) {
+              <div class="dp-chart-card">
+                <div class="dp-chart-title">
+                  <mat-icon class="dp-chart-icon">bar_chart</mat-icon>
+                  {{ msg.chartData.title }}
+                </div>
+                <div class="dp-chart-canvas">
+                  <canvas baseChart
+                    [type]="msg.chartData.type"
+                    [data]="buildChartConfig(msg.chartData).data"
+                    [options]="buildChartConfig(msg.chartData).options">
+                  </canvas>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+    }
+
+    @if (loading) {
+      <div class="dp-row dp-row-bot">
+        <div class="dp-av dp-av-bot"><mat-icon>psychology</mat-icon></div>
+        <div class="dp-bubble dp-bubble-bot dp-typing">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    }
+
+    <div #messagesEnd></div>
+  </div>
+
+  <!-- ── INPUT ── -->
+  <form [formGroup]="form" (ngSubmit)="send()" class="dp-input-bar">
+    <input
+      class="dp-input"
+      formControlName="message"
+      placeholder="Verilerinizi analiz etmemi ve görselleştirmemi isteyin..."
+      autocomplete="off"
+      (keydown)="onKeydown($event)"
+    />
+    <button class="dp-send" type="submit" [disabled]="loading || form.invalid">
+      <mat-icon>send</mat-icon>
+    </button>
+  </form>
+
+</div>

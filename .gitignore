@@ -1,0 +1,19 @@
+# Environment dosyaları (şifreler burada!)
+.env
+
+# Frontend
+frontend/demo2/node_modules/
+frontend/demo2/dist/
+
+# Backend
+backend/demo/target/
+
+# Python
+chatbot/venv/
+chatbot/__pycache__/
+chatbot/*.pyc
+
+# IDE
+.idea/
+.vscode/
+*.iml

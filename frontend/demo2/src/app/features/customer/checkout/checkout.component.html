@@ -1,0 +1,293 @@
+<!-- Processing / Success Overlay -->
+@if (step() === 2 || step() === 3) {
+  <div class="overlay">
+    <div class="overlay-card">
+      @if (step() === 2) {
+        <div class="processing-icon">
+          <mat-spinner diameter="48"></mat-spinner>
+        </div>
+        <div class="overlay-title">Ödeme İşleniyor...</div>
+        <div class="overlay-sub">Lütfen bekleyin, ödemeniz güvenle aktarılıyor</div>
+      } @else {
+        <div class="success-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+        <div class="overlay-title">Ödeme Başarılı! 🎉</div>
+        <div class="overlay-sub">Siparişiniz oluşturuldu. Sipariş detayına yönlendiriliyorsunuz...</div>
+      }
+    </div>
+  </div>
+}
+
+@if (loading()) {
+  <div style="text-align:center;padding:80px">
+    <mat-spinner diameter="50"></mat-spinner>
+  </div>
+} @else {
+  <!-- Page Header -->
+  <div class="page-head">
+    <a routerLink="/customer/cart" class="back-btn">
+      <mat-icon>arrow_back</mat-icon>
+    </a>
+    <h1>Güvenli Ödeme</h1>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step-item done">
+      <div class="step-circle"><mat-icon style="font-size:1rem;width:1rem;height:1rem">check</mat-icon></div>
+      Sepet
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item active">
+      <div class="step-circle">2</div>
+      Ödeme
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item">
+      <div class="step-circle">3</div>
+      Onay
+    </div>
+  </div>
+
+  <div class="checkout-wrap">
+    <!-- LEFT: Payment Panel -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">Ödeme Yöntemi</div>
+
+        <!-- Tabs -->
+        <div class="pay-tabs">
+          <button class="pay-tab" [class.active]="activeTab()==='card'" (click)="setTab('card')">
+            <mat-icon>credit_card</mat-icon> Kart ile Öde
+          </button>
+          <button class="pay-tab" [class.active]="activeTab()==='transfer'" (click)="setTab('transfer')">
+            <mat-icon>account_balance</mat-icon> Havale/EFT
+          </button>
+          <button class="pay-tab" [class.active]="activeTab()==='cod'" (click)="setTab('cod')">
+            <mat-icon>payments</mat-icon> Kapıda Ödeme
+          </button>
+        </div>
+
+        <!-- ═══ CREDIT CARD TAB ═══ -->
+        @if (activeTab() === 'card') {
+          <!-- Card Visual -->
+          <div class="card-visual-wrap">
+            <div class="card-visual" [class.flipped]="cardFlipped()">
+              <!-- Front -->
+              <div class="card-face card-front">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                  <div class="card-logo">{{ cardType === 'troy' ? '🇹🇷 TROY' : '💳 ShopPay' }}</div>
+                  <div class="card-type-badge">
+                    @if (cardType === 'visa') { VISA }
+                    @else if (cardType === 'mastercard') { MC }
+                    @else if (cardType === 'amex') { AMEX }
+                    @else if (cardType === 'troy') { TROY }
+                    @else { ◼◻ }
+                  </div>
+                </div>
+                <div class="card-chip">◱</div>
+                <div class="card-number-display">{{ displayNumber }}</div>
+                <div class="card-bottom">
+                  <div>
+                    <div class="card-label">Kart Sahibi</div>
+                    <div class="card-value">{{ displayHolder }}</div>
+                  </div>
+                  <div>
+                    <div class="card-label">Son Kullanma</div>
+                    <div class="card-value">{{ displayExpiry }}</div>
+                  </div>
+                </div>
+              </div>
+              <!-- Back -->
+              <div class="card-face card-back">
+                <div class="card-stripe"></div>
+                <div class="card-cvv-wrap">
+                  <div class="card-cvv-label">CVV</div>
+                  <div class="card-cvv-box">{{ cardForm.get('cvv')?.value ? '•'.repeat((cardForm.get('cvv')?.value ?? '').length) : '•••' }}</div>
+                </div>
+                <div style="margin-top:auto;font-size:0.65rem;opacity:0.5;text-align:center">Bu kart ShopPlatform tarafından güvence altındadır</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Form -->
+          <form class="card-form" [formGroup]="cardForm" (ngSubmit)="placeOrder()">
+            <!-- Card Number -->
+            <div class="field-group">
+              <label class="field-label">Kart Numarası</label>
+              <input
+                class="field-input"
+                [class.error]="cardForm.get('cardNumber')?.invalid && cardForm.get('cardNumber')?.touched"
+                formControlName="cardNumber"
+                placeholder="0000 0000 0000 0000"
+                maxlength="19"
+                autocomplete="cc-number"
+              />
+              @if (cardForm.get('cardNumber')?.touched) {
+                @if (cardForm.get('cardNumber')?.errors?.['required']) {
+                  <span class="field-error">Kart numarası zorunludur</span>
+                } @else if (cardForm.get('cardNumber')?.errors?.['luhn']) {
+                  <span class="field-error">Geçersiz kart numarası</span>
+                }
+              }
+            </div>
+
+            <!-- Card Holder -->
+            <div class="field-group">
+              <label class="field-label">Kart Üzerindeki İsim</label>
+              <input
+                class="field-input"
+                [class.error]="cardForm.get('cardHolder')?.invalid && cardForm.get('cardHolder')?.touched"
+                formControlName="cardHolder"
+                placeholder="AD SOYAD"
+                autocomplete="cc-name"
+                style="text-transform:uppercase"
+              />
+              @if (cardForm.get('cardHolder')?.touched && cardForm.get('cardHolder')?.errors?.['required']) {
+                <span class="field-error">İsim zorunludur</span>
+              }
+            </div>
+
+            <!-- Expiry + CVV -->
+            <div class="form-row">
+              <div class="field-group">
+                <label class="field-label">Son Kullanma Tarihi</label>
+                <input
+                  class="field-input"
+                  [class.error]="cardForm.get('expiry')?.invalid && cardForm.get('expiry')?.touched"
+                  formControlName="expiry"
+                  placeholder="AA/YY"
+                  maxlength="5"
+                  autocomplete="cc-exp"
+                />
+                @if (cardForm.get('expiry')?.touched) {
+                  @if (cardForm.get('expiry')?.errors?.['expiry']) {
+                    <span class="field-error">Geçersiz tarih (AA/YY)</span>
+                  } @else if (cardForm.get('expiry')?.errors?.['expired']) {
+                    <span class="field-error">Kartın süresi dolmuş</span>
+                  }
+                }
+              </div>
+              <div class="field-group">
+                <label class="field-label">CVV / CVC</label>
+                <input
+                  class="field-input"
+                  [class.error]="cardForm.get('cvv')?.invalid && cardForm.get('cvv')?.touched"
+                  formControlName="cvv"
+                  placeholder="•••"
+                  maxlength="4"
+                  type="password"
+                  autocomplete="cc-csc"
+                  (focus)="flipCard(true)"
+                  (blur)="flipCard(false)"
+                />
+                @if (cardForm.get('cvv')?.touched && cardForm.get('cvv')?.errors?.['pattern']) {
+                  <span class="field-error">3 veya 4 haneli rakam</span>
+                }
+              </div>
+            </div>
+
+            <!-- Save Card -->
+            <label class="save-row">
+              <input type="checkbox" formControlName="saveCard" />
+              Bu kartı gelecek ödemeler için kaydet
+            </label>
+          </form>
+        }
+
+        <!-- ═══ BANK TRANSFER TAB ═══ -->
+        @else if (activeTab() === 'transfer') {
+          <div class="info-box" style="margin-top:20px">
+            <div class="info-label">Aşağıdaki IBAN'a sipariş tutarını transfer edin. Açıklama kısmına sipariş numaranızı yazın.</div>
+            <div class="info-row">
+              <span>Banka</span>
+              <strong>ShopPlatform Bankası</strong>
+            </div>
+            <div class="info-row">
+              <span>IBAN</span>
+              <strong>TR00 0000 0000 0000 0000 0000 00</strong>
+            </div>
+            <div class="info-row">
+              <span>Hesap Adı</span>
+              <strong>ShopPlatform A.Ş.</strong>
+            </div>
+            <div class="info-row">
+              <span>Tutar</span>
+              <strong>{{ total | number:'1.2-2' }} ₺</strong>
+            </div>
+          </div>
+        }
+
+        <!-- ═══ CASH ON DELIVERY TAB ═══ -->
+        @else {
+          <div class="info-box" style="margin-top:20px">
+            <div class="info-label">Kapıda ödeme seçeneğinde ödemenizi teslimat sırasında kurye'ye yaparsınız.</div>
+            <div class="info-row">
+              <span>Ödeme Şekli</span>
+              <strong>Nakit veya Pos</strong>
+            </div>
+            <div class="info-row">
+              <span>Ek Ücret</span>
+              <strong style="color:#22c55e">Ücretsiz</strong>
+            </div>
+            <div class="info-row">
+              <span>Ödenecek Tutar</span>
+              <strong>{{ total | number:'1.2-2' }} ₺</strong>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- RIGHT: Order Summary -->
+    <div class="panel summary-panel">
+      <div class="panel-title" style="padding:22px 24px 16px">Sipariş Özeti</div>
+      <div class="summary-body">
+        @for (item of cart()?.items ?? []; track item.id) {
+          <div class="summary-item">
+            <img [src]="item.product.imageUrl || 'https://placehold.co/52x52/f1f5f9/94a3b8?text=U'" [alt]="item.product.name" />
+            <div>
+              <div class="summary-item-name">{{ item.product.name }}</div>
+              <div class="summary-item-qty">{{ item.quantity }} adet</div>
+            </div>
+            <div class="summary-item-price">{{ (item.product.unitPrice * item.quantity) | number:'1.2-2' }} ₺</div>
+          </div>
+        }
+
+        <hr class="summary-divider">
+        <div class="summary-row">
+          <span>Ürün Toplamı ({{ itemCount }} ürün)</span>
+          <span>{{ total | number:'1.2-2' }} ₺</span>
+        </div>
+        <div class="summary-row">
+          <span>Kargo</span>
+          <span style="color:#22c55e;font-weight:600">Ücretsiz</span>
+        </div>
+        <div class="summary-row">
+          <span>İndirim</span>
+          <span style="color:#ef4444">-0,00 ₺</span>
+        </div>
+        <div class="summary-row total">
+          <span>Genel Toplam</span>
+          <span style="color:#6366f1">{{ total | number:'1.2-2' }} ₺</span>
+        </div>
+
+        <button class="submit-btn" (click)="placeOrder()" [disabled]="!canSubmit() || processing()">
+          @if (processing()) {
+            <mat-spinner diameter="20"></mat-spinner>
+            İşleniyor...
+          } @else {
+            <mat-icon>lock</mat-icon>
+            Siparişi Tamamla — {{ total | number:'1.2-2' }} ₺
+          }
+        </button>
+
+        <div class="secure-badge">
+          <mat-icon>verified_user</mat-icon>
+          256-bit SSL ile şifrelenmiş güvenli bağlantı
+        </div>
+      </div>
+    </div>
+  </div>
+}

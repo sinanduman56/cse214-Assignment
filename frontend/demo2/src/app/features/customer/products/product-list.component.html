@@ -1,0 +1,416 @@
+﻿<div class="pl-root">
+
+  <!-- ══════════════ HERO HEADER ══════════════ -->
+  <div class="pl-hero">
+    <div class="pl-hero-inner">
+      <h1 class="pl-hero-title">Tüm Ürünler</h1>
+      <p class="pl-hero-sub">{{ totalElements() }} ürün · farklı mağazaların fiyatlarını karşılaştır</p>
+    </div>
+  </div>
+
+  <!-- ══════════════ STICKY TOOLBAR ══════════════ -->
+  <div class="pl-toolbar">
+
+    <!-- Search -->
+    <div class="pl-search-wrap">
+      <mat-icon class="pl-search-icon">search</mat-icon>
+      <input class="pl-search-input" [formControl]="filterForm.controls['keyword']"
+             placeholder="Ürün ara..." />
+      @if (filterForm.controls['keyword'].value) {
+        <button class="pl-clear-btn" (click)="filterForm.controls['keyword'].setValue('')">
+          <mat-icon style="font-size:16px;width:16px;height:16px">close</mat-icon>
+        </button>
+      }
+    </div>
+
+    <!-- Sort -->
+    <mat-form-field appearance="outline" class="pl-sort-field">
+      <mat-select [formControl]="filterForm.controls['sort']">
+        @for (opt of sortOptions; track opt.value) {
+          <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Filter toggle -->
+    <button class="pl-filter-btn" (click)="showFilters.set(!showFilters())"
+            [class.active]="showFilters()">
+      <mat-icon>tune</mat-icon>
+      <span>Filtrele</span>
+    </button>
+  </div>
+
+  <!-- Fiyat filtresi (collapsed by default) -->
+  @if (showFilters()) {
+    <div class="pl-price-filter">
+      <span class="pl-price-label">Fiyat Aralığı</span>
+      <div class="pl-price-inputs">
+        <mat-form-field appearance="outline" style="width:130px">
+          <mat-label>Min ₺</mat-label>
+          <input matInput type="number" [formControl]="filterForm.controls['minPrice']" />
+        </mat-form-field>
+        <span style="color:#94a3b8;align-self:center">—</span>
+        <mat-form-field appearance="outline" style="width:130px">
+          <mat-label>Max ₺</mat-label>
+          <input matInput type="number" [formControl]="filterForm.controls['maxPrice']" />
+        </mat-form-field>
+      </div>
+    </div>
+  }
+
+  <!-- ══════════════ CATEGORY PILLS ══════════════ -->
+  <div class="pl-cats-wrap">
+    <div class="pl-cats">
+      <button class="pl-cat-pill" [class.selected]="selectedCategoryId() === null"
+              (click)="selectCategory(null)">
+        <mat-icon>apps</mat-icon>
+        <span>Tümü</span>
+      </button>
+      @for (cat of categories(); track cat.id) {
+        <button class="pl-cat-pill" [class.selected]="selectedCategoryId() === cat.id"
+                (click)="selectCategory(cat.id)">
+          <mat-icon>{{ getCategoryIcon(cat.name) }}</mat-icon>
+          <span>{{ cat.name }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ══════════════ PRODUCT GRID ══════════════ -->
+  @if (loading()) {
+    <div class="pl-spinner-center">
+      <mat-spinner diameter="52"></mat-spinner>
+    </div>
+  } @else if (products().length === 0) {
+    <div class="pl-empty">
+      <mat-icon class="pl-empty-icon">search_off</mat-icon>
+      <p>Ürün bulunamadı</p>
+    </div>
+  } @else {
+    <div class="pl-grid">
+      @for (product of products(); track product.id) {
+        <a [routerLink]="['/customer/products', product.id]" class="pl-card-link">
+          <div class="pl-card" [class.pl-card-oos]="(product.stockQuantity ?? 1) === 0">
+            <!-- Image -->
+            <div class="pl-card-img-wrap">
+              <img [src]="getImageUrl(product)" [alt]="product.name"
+                   (error)="onImageError($event)" class="pl-card-img" />
+              <!-- Stokta Kalmadı overlay -->
+              @if ((product.stockQuantity ?? 1) === 0) {
+                <div class="pl-oos-overlay">
+                  <span class="pl-oos-label">Stokta Kalmadı</span>
+                </div>
+              }
+              <!-- Wishlist -->
+              <button class="pl-wish-btn"
+                      [class.active]="wishlist.has(product.id)"
+                      (click)="toggleWishlist(product, $event)"
+                      [title]="wishlist.has(product.id) ? 'Favorilerden çıkar' : 'Favorilere ekle'">
+                <mat-icon>{{ wishlist.has(product.id) ? 'favorite' : 'favorite_border' }}</mat-icon>
+              </button>
+              @if (product.category) {
+                <span class="pl-cat-badge">{{ product.category.name }}</span>
+              }
+              @if ((product.stockQuantity ?? 99) > 0 && (product.stockQuantity ?? 99) < 10) {
+                <span class="pl-low-stock-badge">
+                  🔥 Son {{ product.stockQuantity }} ürün!
+                </span>
+              }
+            </div>
+            <!-- Info -->
+            <div class="pl-card-body">
+              <p class="pl-card-name">{{ product.name }}</p>
+              @if (product.store) {
+                <a class="pl-card-store" [routerLink]="['/customer/stores', product.store.id]"
+                   (click)="$event.stopPropagation()">
+                  <mat-icon class="pl-store-icon">storefront</mat-icon>{{ product.store.name }}
+                </a>
+              }
+              <p class="pl-card-sku">{{ product.sku }}</p>
+              <div class="pl-card-footer">
+                <span class="pl-card-price" [class.pl-price-oos]="(product.stockQuantity ?? 1) === 0">{{ product.unitPrice | number:'1.0-0' }} ₺</span>
+                <button class="pl-cart-btn" (click)="addToCart(product, $event)"
+                        [disabled]="(product.stockQuantity ?? 1) === 0"
+                        [style.opacity]="(product.stockQuantity ?? 1) === 0 ? '0.35' : '1'"
+                        [title]="(product.stockQuantity ?? 1) === 0 ? 'Stokta yok' : 'Sepete ekle'">
+                  <mat-icon>{{ (product.stockQuantity ?? 1) === 0 ? 'remove_shopping_cart' : 'add_shopping_cart' }}</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+        </a>
+      }
+    </div>
+
+  }
+</div>
+
+<!-- Infinite scroll loading indicator (always in DOM) -->
+<div class="pl-sentinel" #sentinel>
+  @if (loadingMore()) {
+    <mat-spinner diameter="36"></mat-spinner>
+  } @else if (!loading() && products().length > 0 && !hasMore()) {
+    <p class="pl-end-text">Tüm ürünler yüklendi · {{ totalElements() }} ürün</p>
+  }
+</div>
+
+<style>
+/* ── Root ── */
+.pl-root { max-width: 1400px; margin: 0 auto; padding: 0 0 60px; }
+
+/* ── Hero ── */
+.pl-hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 48px 32px 40px;
+  margin-bottom: 0;
+}
+.pl-hero-title {
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+.pl-hero-sub { color: rgba(255,255,255,0.8); font-size: 0.95rem; margin: 0; }
+
+/* ── Sticky Toolbar ── */
+.pl-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--c-card, #fff);
+  border-bottom: 1px solid var(--c-border, #e2e8f0);
+  padding: 12px 24px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.pl-search-wrap {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  background: var(--c-input, #f1f5f9);
+  border-radius: 24px;
+  padding: 0 16px;
+  height: 44px;
+  gap: 8px;
+}
+.pl-search-icon { color: #94a3b8; font-size: 20px; width: 20px; height: 20px; }
+.pl-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.93rem;
+  color: var(--c-text, #1e293b);
+}
+.pl-clear-btn {
+  background: none; border: none; cursor: pointer; display: flex; align-items: center;
+  color: #94a3b8; padding: 0;
+}
+.pl-clear-btn:hover { color: #475569; }
+
+.pl-sort-field { width: 200px; margin-bottom: -22px; }
+
+.pl-filter-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--c-input, #f1f5f9);
+  border: 1.5px solid var(--c-border, #e2e8f0);
+  border-radius: 24px;
+  padding: 0 16px; height: 44px;
+  cursor: pointer; font-size: 0.88rem; color: var(--c-sub, #475569);
+  transition: all 0.15s;
+}
+.pl-filter-btn:hover, .pl-filter-btn.active {
+  background: #667eea; color: #fff; border-color: #667eea;
+}
+.pl-filter-btn mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+/* ── Price filter ── */
+.pl-price-filter {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  background: var(--c-card, #fff);
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--c-border, #e2e8f0);
+}
+.pl-price-label { font-size: 0.85rem; color: var(--c-sub, #475569); font-weight: 600; white-space: nowrap; }
+.pl-price-inputs { display: flex; align-items: center; gap: 8px; }
+
+/* ── Category pills ── */
+.pl-cats-wrap {
+  overflow-x: auto;
+  padding: 16px 24px 4px;
+  background: var(--c-card, #fff);
+  scrollbar-width: none;
+}
+.pl-cats-wrap::-webkit-scrollbar { display: none; }
+.pl-cats {
+  display: flex; gap: 10px; align-items: center;
+  width: max-content;
+}
+.pl-cat-pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 18px;
+  border-radius: 100px;
+  border: 1.5px solid var(--c-border, #e2e8f0);
+  background: var(--c-input, #f8fafc);
+  color: var(--c-sub, #475569);
+  font-size: 0.85rem; font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s;
+}
+.pl-cat-pill mat-icon { font-size: 16px; width: 16px; height: 16px; }
+.pl-cat-pill:hover {
+  background: #ede9fe; border-color: #7c3aed; color: #7c3aed;
+}
+.pl-cat-pill.selected {
+  background: #7c3aed; border-color: #7c3aed; color: #fff;
+  box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+}
+
+/* ── Product Grid ── */
+.pl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+  padding: 24px 24px 0;
+}
+
+.pl-card-link { text-decoration: none; color: inherit; display: block; }
+
+.pl-card {
+  background: var(--c-card, #fff);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--c-border, #e2e8f0);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.pl-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+}
+
+.pl-card-img-wrap {
+  position: relative;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  background: #f8fafc;
+}
+.pl-card-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s;
+}
+.pl-card:hover .pl-card-img { transform: scale(1.05); }
+
+.pl-wish-btn {
+  position: absolute; top: 10px; right: 10px;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: none; cursor: pointer;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.18s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.pl-wish-btn mat-icon { font-size: 18px; width: 18px; height: 18px; color: #cbd5e1; }
+.pl-wish-btn.active mat-icon { color: #ec4899; }
+.pl-wish-btn:hover { transform: scale(1.1); }
+
+.pl-cat-badge {
+  position: absolute; bottom: 10px; left: 10px;
+  background: rgba(124,58,237,0.85);
+  color: #fff; font-size: 0.72rem; font-weight: 600;
+  padding: 3px 10px; border-radius: 100px;
+  backdrop-filter: blur(4px);
+}
+
+.pl-low-stock-badge {
+  position: absolute; top: 10px; left: 10px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff; font-size: 0.72rem; font-weight: 700;
+  padding: 4px 10px; border-radius: 100px;
+  box-shadow: 0 2px 8px rgba(239,68,68,0.5);
+  animation: pulse-badge 1.8s ease-in-out infinite;
+  letter-spacing: 0.02em;
+}
+
+/* Out of stock */
+.pl-card-oos {
+  opacity: 0.65;
+  filter: grayscale(40%);
+}
+.pl-card-oos .pl-card-img {
+  filter: grayscale(50%);
+}
+.pl-oos-overlay {
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,0.55);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(1px);
+}
+.pl-oos-label {
+  background: rgba(100,100,100,0.82);
+  color: #fff; font-size: 0.8rem; font-weight: 700;
+  padding: 6px 16px; border-radius: 100px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.pl-price-oos {
+  text-decoration: line-through;
+  color: #aaa !important;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { box-shadow: 0 2px 8px rgba(239,68,68,0.5); }
+  50% { box-shadow: 0 2px 16px rgba(239,68,68,0.85); }
+}
+
+.pl-card-body { padding: 14px 16px 16px; }
+.pl-card-name {
+  font-size: 0.92rem; font-weight: 600; color: var(--c-text, #1e293b);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin: 0 0 4px;
+}
+.pl-card-sku { font-size: 0.73rem; color: var(--c-muted, #94a3b8); margin: 0 0 10px; }
+.pl-card-store {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 0.75rem; font-weight: 500;
+  color: #7c3aed; margin: 0 0 2px;
+  text-decoration: none;
+}
+.pl-card-store:hover { text-decoration: underline; }
+.pl-store-icon { font-size: 13px; width: 13px; height: 13px; }
+.pl-card-footer { display: flex; align-items: center; justify-content: space-between; }
+.pl-card-price { font-size: 1.1rem; font-weight: 700; color: #7c3aed; }
+
+.pl-cart-btn {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, #667eea, #7c3aed);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  transition: all 0.18s;
+  box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+}
+.pl-cart-btn:hover { transform: scale(1.08); box-shadow: 0 6px 16px rgba(124,58,237,0.45); }
+.pl-cart-btn mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+/* ── Infinite scroll sentinel ── */
+.pl-sentinel {
+  display: flex; justify-content: center; align-items: center;
+  padding: 40px 0 20px;
+  min-height: 80px;
+}
+.pl-end-text { color: var(--c-muted, #94a3b8); font-size: 0.88rem; }
+
+/* ── Spinner / Empty ── */
+.pl-spinner-center { display: flex; justify-content: center; padding: 80px 0; }
+.pl-empty { display: flex; flex-direction: column; align-items: center; padding: 80px 0; color: #94a3b8; }
+.pl-empty-icon { font-size: 64px; width: 64px; height: 64px; color: #e2e8f0; margin-bottom: 12px; }
+</style>

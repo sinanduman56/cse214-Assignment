@@ -1,0 +1,64 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Kategori Yönetimi</h1>
+  </div>
+
+  <!-- Add Form -->
+  <form [formGroup]="form" (ngSubmit)="addCategory()" style="display:flex;gap:12px;align-items:flex-start;margin-bottom:24px;background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+    <mat-form-field appearance="outline" style="flex:1">
+      <mat-label>Yeni Kategori Adı</mat-label>
+      <input matInput formControlName="name" placeholder="örn. Elektronik" />
+    </mat-form-field>
+    <button mat-flat-button color="primary" type="submit" style="margin-top:4px">
+      <mat-icon>add</mat-icon> Ekle
+    </button>
+  </form>
+
+  @if (loading) {
+    <div style="text-align:center;padding:60px"><mat-spinner diameter="50"></mat-spinner></div>
+  } @else {
+    <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+      <table mat-table [dataSource]="categories" style="width:100%">
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>#</th>
+          <td mat-cell *matCellDef="let c" style="color:#bdbdbd;width:60px">{{ c.id }}</td>
+        </ng-container>
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Kategori Adı</th>
+          <td mat-cell *matCellDef="let c">
+            @if (editingId === c.id) {
+              <form [formGroup]="editForm" style="display:flex;gap:8px;align-items:center">
+                <mat-form-field appearance="outline" style="min-width:200px">
+                  <input matInput formControlName="name" />
+                </mat-form-field>
+                <button mat-icon-button color="primary" type="button" (click)="saveEdit(c)">
+                  <mat-icon>check</mat-icon>
+                </button>
+                <button mat-icon-button type="button" (click)="editingId = null">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </form>
+            } @else {
+              <span style="font-weight:500">{{ c.name }}</span>
+            }
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>İşlemler</th>
+          <td mat-cell *matCellDef="let c">
+            @if (editingId !== c.id) {
+              <button mat-icon-button color="primary" (click)="startEdit(c)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="deleteCategory(c)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+  }
+</div>

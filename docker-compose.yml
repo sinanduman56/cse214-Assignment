@@ -1,0 +1,67 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: shopplatform-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: datalar_db
+      POSTGRES_USER: Sinan
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U Sinan -d datalar_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend/demo
+      dockerfile: Dockerfile
+    container_name: shopplatform-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/datalar_db
+      SPRING_DATASOURCE_USERNAME: Sinan
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      APPLICATION_SECURITY_JWT_SECRET_KEY: ${JWT_SECRET}
+      APPLICATION_SECURITY_JWT_EXPIRATION: 86400000
+    volumes:
+      - uploads_data:/app/uploads
+    ports:
+      - "8080:8080"
+
+  chatbot:
+    build:
+      context: ./chatbot
+      dockerfile: Dockerfile
+    container_name: shopplatform-chatbot
+    restart: unless-stopped
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend/demo2
+      dockerfile: Dockerfile
+    container_name: shopplatform-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - chatbot
+    ports:
+      - "80:80"
+
+volumes:
+  postgres_data:
+  uploads_data:

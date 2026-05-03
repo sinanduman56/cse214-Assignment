@@ -1,0 +1,147 @@
+<div class="sl-root">
+
+  <!-- Hero -->
+  <div class="sl-hero">
+    <div class="sl-hero-inner">
+      <h1 class="sl-hero-title">Mağazalar</h1>
+      <p class="sl-hero-sub">Platformumuzdaki tüm satıcıları keşfet, ürünleri karşılaştır</p>
+    </div>
+  </div>
+
+  <!-- Grid -->
+  @if (loading()) {
+    <div class="sl-spinner"><mat-spinner diameter="52"></mat-spinner></div>
+  } @else {
+    <div class="sl-grid">
+      @for (card of stores(); track card.store.id; let i = $index) {
+        <a [routerLink]="['/customer/stores', card.store.id]" class="sl-card-link">
+          <div class="sl-card">
+            <!-- Banner -->
+            <div class="sl-card-banner" [style.background]="getGradient(i)">
+              <span class="sl-initials">{{ getInitials(card.store.name) }}</span>
+              <span class="sl-status-badge" [class.active]="card.store.active">
+                {{ card.store.active ? 'Aktif' : 'Pasif' }}
+              </span>
+            </div>
+            <!-- Info -->
+            <div class="sl-card-body">
+              <p class="sl-store-name">{{ card.store.name }}</p>
+              @if (card.store.location) {
+                <p class="sl-store-loc"><mat-icon class="sl-loc-icon">location_on</mat-icon>{{ card.store.location }}</p>
+              }
+              <div class="sl-card-footer">
+                <span class="sl-prod-count">
+                  <mat-icon class="sl-prod-icon">inventory_2</mat-icon>
+                  {{ card.productCount }} ürün
+                </span>
+                <span class="sl-visit-btn">
+                  Mağazaya Git <mat-icon class="sl-arrow">arrow_forward</mat-icon>
+                </span>
+              </div>
+            </div>
+          </div>
+        </a>
+      }
+    </div>
+  }
+
+</div>
+
+<style>
+.sl-root { max-width: 1400px; margin: 0 auto; padding: 0 0 60px; }
+
+/* Hero */
+.sl-hero {
+  background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+  padding: 48px 32px 40px;
+}
+.sl-hero-title { color: #fff; font-size: 2rem; font-weight: 700; margin: 0 0 6px; }
+.sl-hero-sub { color: rgba(255,255,255,0.8); font-size: 0.95rem; margin: 0; }
+
+/* Spinner */
+.sl-spinner { display: flex; justify-content: center; padding: 80px 0; }
+
+/* Grid */
+.sl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  padding: 32px 24px;
+}
+
+.sl-card-link { text-decoration: none; color: inherit; display: block; }
+
+.sl-card {
+  background: var(--c-card, #fff);
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--c-border, #e2e8f0);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.sl-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 48px rgba(0,0,0,0.13);
+}
+
+/* Banner */
+.sl-card-banner {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.sl-initials {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: -1px;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+.sl-status-badge {
+  position: absolute;
+  top: 12px; right: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 100px;
+  background: rgba(0,0,0,0.25);
+  color: #fff;
+  backdrop-filter: blur(4px);
+}
+.sl-status-badge.active { background: rgba(34,197,94,0.8); }
+
+/* Body */
+.sl-card-body { padding: 18px 20px 20px; }
+.sl-store-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--c-text, #1e293b);
+  margin: 0 0 6px;
+}
+.sl-store-loc {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 0.8rem; color: var(--c-sub, #64748b);
+  margin: 0 0 14px;
+}
+.sl-loc-icon { font-size: 14px; width: 14px; height: 14px; color: #94a3b8; }
+
+.sl-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sl-prod-count {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 0.82rem; color: var(--c-sub, #64748b); font-weight: 500;
+}
+.sl-prod-icon { font-size: 15px; width: 15px; height: 15px; }
+.sl-visit-btn {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 0.82rem; font-weight: 600;
+  color: #7c3aed;
+  transition: gap 0.15s;
+}
+.sl-card:hover .sl-visit-btn { gap: 8px; }
+.sl-arrow { font-size: 15px; width: 15px; height: 15px; }
+</style>

@@ -1,0 +1,99 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Satış Analitiği</h1>
+  </div>
+
+  @if (store) {
+    <div class="kpi-grid" style="margin-bottom:24px">
+      <div class="stat-card">
+        <mat-icon class="stat-icon">inventory_2</mat-icon>
+        <div class="stat-label">Ürün Sayısı</div>
+        <div class="stat-value">{{ analytics['totalProducts'] ?? 0 }}</div>
+      </div>
+      <div class="stat-card">
+        <mat-icon class="stat-icon" style="color:#00897b">receipt_long</mat-icon>
+        <div class="stat-label">Toplam Sipariş</div>
+        <div class="stat-value">{{ analytics['totalOrders'] ?? 0 }}</div>
+      </div>
+      <div class="stat-card">
+        <mat-icon class="stat-icon" style="color:#f57c00">payments</mat-icon>
+        <div class="stat-label">Toplam Gelir</div>
+        <div class="stat-value" style="font-size:1.3rem">{{ ($any(analytics['totalRevenue']) ?? 0) | currency:'TRY':'symbol':'1.0-0':'tr' }}</div>
+      </div>
+    </div>
+  }
+
+  @if (loading) {
+    <div style="text-align:center;padding:60px"><mat-spinner diameter="50"></mat-spinner></div>
+  } @else {
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px">
+      <div class="chart-card">
+        <h3>Aylık Gelir Trendi</h3>
+        <canvas #salesChart style="max-height:320px"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Sipariş Durumu Dağılımı</h3>
+        <canvas #statusChart style="max-height:320px"></canvas>
+      </div>
+    </div>
+
+    <!-- Müşteri Segmentasyon Analizi -->
+    @if (segmentation && (Object.keys(segmentation.byCity).length > 0 || Object.keys(segmentation.byMembership).length > 0)) {
+      <div style="margin-top:24px">
+        <h2 style="font-size:1.1rem;font-weight:600;color:#37474f;margin-bottom:16px">
+          <mat-icon style="vertical-align:middle;margin-right:6px;color:#00897b">people</mat-icon>
+          Müşteri Segmentasyon Analizi
+        </h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="chart-card">
+            <h3>Şehre Göre Müşteri Dağılımı</h3>
+            <canvas #cityChart style="max-height:280px"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>Üyülük Tipine Göre Segment</h3>
+            <canvas #membershipChart style="max-height:280px"></canvas>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Gelir Raporu Drill-Down -->
+    <div style="margin-top:24px">
+      <h2 style="font-size:1.1rem;font-weight:600;color:#37474f;margin-bottom:16px">
+        <mat-icon style="vertical-align:middle;margin-right:6px;color:#f57c00">bar_chart</mat-icon>
+        Gelir Raporu
+      </h2>
+      <!-- Tarih filtresi -->
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+        <mat-form-field appearance="outline" style="width:160px">
+          <mat-label>Başlangıç</mat-label>
+          <input matInput type="date" [(ngModel)]="filterFrom" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" style="width:160px">
+          <mat-label>Bitiş</mat-label>
+          <input matInput type="date" [(ngModel)]="filterTo" />
+        </mat-form-field>
+        <button mat-flat-button color="primary" (click)="loadDrillDown()">
+          <mat-icon>filter_list</mat-icon> Filtrele
+        </button>
+        @if (filterFrom || filterTo) {
+          <button mat-stroked-button (click)="filterFrom=''; filterTo=''; loadDrillDown()">
+            <mat-icon>clear</mat-icon> Temizle
+          </button>
+        }
+      </div>
+      @if (drillDown) {
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="chart-card">
+            <h3>Ürüne Göre Gelir (Top 15)</h3>
+            <canvas #productChart style="max-height:400px"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>Günlük Gelir Trendi</h3>
+            <canvas #dailyChart style="max-height:400px"></canvas>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

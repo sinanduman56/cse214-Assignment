@@ -1,0 +1,62 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Sipariş Yönetimi</h1>
+    <mat-form-field appearance="outline" style="min-width:160px">
+      <mat-label>Durum Filtresi</mat-label>
+      <mat-select [(ngModel)]="statusFilter" (ngModelChange)="applyFilter()">
+        @for (s of statuses; track s) {
+          <mat-option [value]="s">{{ s === 'ALL' ? 'Tümü' : s }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  @if (loading) {
+    <div style="text-align:center;padding:60px"><mat-spinner diameter="50"></mat-spinner></div>
+  } @else if (filtered.length === 0) {
+    <div style="text-align:center;padding:40px;background:#fff;border-radius:12px">
+      <p style="color:#9e9e9e">Sipariş bulunamadı</p>
+    </div>
+  } @else {
+    <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+      <table mat-table [dataSource]="filtered" style="width:100%">
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>Sipariş #</th>
+          <td mat-cell *matCellDef="let o" style="font-weight:700">#{{ o.id }}</td>
+        </ng-container>
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef>Tarih</th>
+          <td mat-cell *matCellDef="let o" style="color:#757575">{{ o.orderDate | date:'dd.MM.yyyy' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="total">
+          <th mat-header-cell *matHeaderCellDef>Tutar</th>
+          <td mat-cell *matCellDef="let o" style="font-weight:600;color:#1565c0">{{ o.grandTotal | currency:'TRY':'symbol':'1.2-2':'tr' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="payment">
+          <th mat-header-cell *matHeaderCellDef>Ödeme</th>
+          <td mat-cell *matCellDef="let o" style="color:#757575;font-size:0.85rem">{{ o.paymentMethod }}</td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Durum</th>
+          <td mat-cell *matCellDef="let o">
+            <span class="status-chip {{ statusClass(o.status) }}">{{ o.status }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Durum Güncelle</th>
+          <td mat-cell *matCellDef="let o">
+            <mat-form-field appearance="outline" style="min-width:130px;font-size:0.8rem">
+              <mat-select [value]="o.status" (selectionChange)="updateStatus(o, $event.value)">
+                @for (s of statuses.slice(1); track s) {
+                  <mat-option [value]="s">{{ s }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+  }
+</div>

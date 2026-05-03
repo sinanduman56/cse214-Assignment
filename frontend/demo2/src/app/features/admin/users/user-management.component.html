@@ -1,0 +1,60 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Kullanıcı Yönetimi</h1>
+    <span style="color:#757575">{{ users.length }} kullanıcı</span>
+  </div>
+
+  @if (loading) {
+    <div style="text-align:center;padding:60px"><mat-spinner diameter="50"></mat-spinner></div>
+  } @else {
+    <div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+      <table mat-table [dataSource]="users" style="width:100%">
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>#</th>
+          <td mat-cell *matCellDef="let u" style="color:#bdbdbd;font-size:0.8rem">{{ u.id }}</td>
+        </ng-container>
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef>E-posta</th>
+          <td mat-cell *matCellDef="let u" style="font-weight:500">{{ u.email }}</td>
+        </ng-container>
+        <ng-container matColumnDef="role">
+          <th mat-header-cell *matHeaderCellDef>Rol</th>
+          <td mat-cell *matCellDef="let u">
+            <span style="background:#e8eaf6;color:#3f51b5;padding:3px 8px;border-radius:20px;font-size:0.8rem;font-weight:600">
+              {{ u.roleType }}
+            </span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Durum</th>
+          <td mat-cell *matCellDef="let u">
+            <span [style.background]="u.active !== false ? '#e8f5e9' : '#fce4ec'"
+                  [style.color]="u.active !== false ? '#2e7d32' : '#c62828'"
+                  style="padding:3px 10px;border-radius:20px;font-size:0.8rem;font-weight:600">
+              {{ u.active !== false ? 'AKTİF' : 'ASKIDA' }}
+            </span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>İşlemler</th>
+          <td mat-cell *matCellDef="let u">
+            @if (u.active !== false) {
+              <button mat-icon-button color="warn" (click)="suspend(u)" title="Askıya Al">
+                <mat-icon>block</mat-icon>
+              </button>
+            } @else {
+              <button mat-icon-button color="primary" (click)="activate(u)" title="Aktifleştir">
+                <mat-icon>check_circle</mat-icon>
+              </button>
+            }
+            <button mat-icon-button color="warn" (click)="deleteUser(u)" title="Sil">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+  }
+</div>
